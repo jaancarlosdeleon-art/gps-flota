@@ -1,9 +1,13 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 import pandas as pd
 from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
+
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
 
 ARQUIVO = "data.csv"
 
