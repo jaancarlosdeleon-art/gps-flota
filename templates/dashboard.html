@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GPS FLOTA PRO</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#0b1220;
+    font-family:Arial;
+    color:white;
+}
+
+.header{
+    background:#111827;
+    padding:20px;
+    text-align:center;
+    border-bottom:2px solid #00e5ff;
+}
+
+.header h1{
+    margin:0;
+    color:#00e5ff;
+}
+
+.fecha{
+    color:#9ca3af;
+    margin-top:5px;
+}
+
+.container{
+    padding:20px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:#111827;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 0 15px rgba(0,0,0,0.5);
+    border-left:8px solid #00ff88;
+}
+
+.card h2{
+    margin:0;
+    font-size:22px;
+}
+
+.km{
+    margin-top:15px;
+    font-size:28px;
+    font-weight:bold;
+}
+
+.estado{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.info{
+    margin-top:10px;
+    color:#d1d5db;
+    line-height:1.7;
+}
+
+.alerta{
+    margin-top:15px;
+    padding:10px;
+    border-radius:10px;
+    font-weight:bold;
+    text-align:center;
+}
+
+.ok{
+    background:#064e3b;
+}
+
+.proximo{
+    background:#78350f;
+}
+
+.critico{
+    background:#7f1d1d;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>🚛 GPS FLOTA PRO</h1>
+
+<div class="fecha">
+Actualizado: {{fecha}}
+</div>
+
+</div>
+
+<div class="container">
+
+{% for c in camiones %}
+
+<div class="card" style="border-left-color: {{c.color}};">
+
+<h2>{{c.vehiculo}}</h2>
+
+<div class="km">
+{{c.km}} KM
+</div>
+
+<div class="estado" style="color: {{c.color}};">
+{{c.estado}}
+</div>
+
+<div class="info">
+
+<div>
+<b>Límite:</b> {{c.limite}} KM
+</div>
+
+<div>
+<b>Último mantenimiento:</b> {{c.fecha}}
+</div>
+
+<div>
+<b>Próximo límite:</b> {{c.limite_fecha}}
+</div>
+
+<div>
+<b>Días restantes:</b> {{c.dias}}
+</div>
+
+</div>
+
+{% if c.estado == "OK" %}
+
+<div class="alerta ok">
+✅ Todo correcto
+</div>
+
+{% elif c.estado == "PRÓXIMO" %}
+
+<div class="alerta proximo">
+⚠️ Próximo a mantenimiento
+</div>
+
+{% else %}
+
+<div class="alerta critico">
+🚨 Cambio requerido
+</div>
+
+{% endif %}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</body>
+</html>

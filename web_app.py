@@ -1,82 +1,115 @@
-from flask import Flask
+from flask import Flask, render_template
 import pandas as pd
+from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
 
 ARQUIVO = "data.csv"
 
+LIMITES = {
+    "F02": 6000,
+    "F03": 8000,
+    "F04": 8000,
+    "F05": 5000,
+    "F06": 6000,
+    "F07": 6000,
+    "F08": 6000,
+    "F09": 6000,
+    "F10": 8000,
+    "F11": 6000,
+    "F12": 6000,
+    "F13": 5000,
+    "F14": 8000,
+    "F16": 8000,
+    "F18": 8000
+}
+
 @app.route("/")
 
 def home():
 
     if not os.path.exists(ARQUIVO):
+        return "No existe data.csv"
 
-        return "<h1>No existe data.csv</h1>"
+    df = pd.read_csv(
+        ARQUIVO,
+        sep=";"
+    )
 
-    try:
+    df.columns = ["fecha", "vehiculo", "km"]
 
-        df = pd.read_csv(
-            ARQUIVO,
-            sep=";"
+    df["km"] = pd.to_numeric(
+        df["km"],
+        errors="coerce"
+    ).fillna(0)
+
+    resultado = []
+
+    agrupado = df.groupby("vehiculo")
+
+    for vehiculo, grupo in agrupado:
+
+        km_total = grupo["km"].sum()
+
+        fila = grupo.iloc[-1]
+
+        fecha = pd.to_datetime(
+            fila["fecha"],
+            dayfirst=True,
+            errors="coerce"
         )
 
-        html = """
-        <html>
-        <head>
-            <title>GPS FLOTA</title>
-            <style>
-                body{
-                    background:#0D1117;
-                    color:white;
-                    font-family:Arial;
-                    padding:20px;
-                }
+        ficha = vehiculo.split()[0]
 
-                h1{
-                    color:#00E5FF;
-                }
+        limite = LIMITES.get(ficha, 6000)
 
-                table{
-                    width:100%;
-                    border-collapse:collapse;
-                    background:#161B22;
-                }
+        dias = 999
+        fecha_limite = "N/A"
 
-                th,td{
-                    border:1px solid #30363D;
-                    padding:10px;
-                    text-align:center;
-                }
+        if pd.notna(fecha):
 
-                th{
-                    background:#21262D;
-                    color:#00E5FF;
-                }
+            fecha_limite_dt = fecha + timedelta(days=120)
 
-                tr:hover{
-                    background:#1F2937;
-                }
-            </style>
-        </head>
-        <body>
+            dias = (fecha_limite_dt - datetime.now()).days
 
-        <h1>🚛 GPS FLOTA</h1>
+            fecha_limite = fecha_limite_dt.strftime("%d/%m/%Y")
 
-        """
+        estado = "OK"
+        color = "#00ff88"
 
-        html += df.to_html(index=False)
+        if km_total >= limite or dias <= 0:
+            estado = "CAMBIO YA"
+            color = "#ff3b30"
 
-        html += """
-        </body>
-        </html>
-        """
+        elif km_total >= (limite - 1000) or dias <= 30:
+            estado = "PRÓXIMO"
+            color = "#ffcc00"
 
-        return html
+        resultado.append({
+            "vehiculo": vehiculo,
+            "km": round(km_total, 2),
+            "limite": limite,
+            "estado": estado,
+            "color": color,
+            "fecha": fecha.strftime("%d/%m/%Y") if pd.notna(fecha) else "SIN FECHA",
+            "limite_fecha": fecha_limite,
+            "dias": dias
+        })
 
-    except Exception as e:
+    resultado = sorted(
+        resultado,
+        key=lambda x: (
+            x["estado"] != "CAMBIO YA",
+            x["estado"] != "PRÓXIMO"
+        )
+    )
 
-        return f"<h1>Error:</h1><pre>{str(e)}</pre>"
+    return render_template(
+        "dashboard.html",
+        camiones=resultado,
+        fecha=datetime.now().strftime("%d/%m/%Y %H:%M")
+    )
 
 if __name__ == "__main__":
 
